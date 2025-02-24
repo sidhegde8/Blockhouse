@@ -1,0 +1,30 @@
+name: Deploy to AWS EC2
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Deploy to EC2
+      env:
+        SSH_PRIVATE_KEY: ${{ secrets.EC2_SSH_KEY }}
+        EC2_HOST: ${{ secrets.EC2_HOST }}
+        EC2_USER: ubuntu
+      run: |
+        echo "$SSH_PRIVATE_KEY" > private_key.pem
+        chmod 600 private_key.pem
+        ssh -o StrictHostKeyChecking=no -i private_key.pem $EC2_USER@$EC2_HOST << 'EOF'
+          cd ~/Blockhouse
+          git pull origin main
+          sudo docker stop $(sudo docker ps -q)
+          sudo docker build -t blockhouse .
+          sudo docker run -d -p 8000:8000 blockhouse
+        EOF
