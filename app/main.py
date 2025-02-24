@@ -28,7 +28,7 @@ class Order(Base):
     quantity = Column(Integer)
     order_type = Column(String)
 
-# ✅ Ensure tables are created on app startup
+
 @app.on_event("startup")
 def startup():
     Base.metadata.create_all(bind=engine)
@@ -51,14 +51,23 @@ class OrderCreate(BaseModel):
 # Create Order (Fix: Accept JSON instead of query params)
 @app.post("/orders", response_model=OrderCreate)
 def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    new_order = Order(**order.model_dump())  # ✅ Fix for Pydantic v2
+    new_order = Order(**order.model_dump())  
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
     return new_order
 
 # Get All Orders
-@app.get("/orders", response_model=List[OrderCreate])
+@app.get("/orders")
 def get_orders(db: Session = Depends(get_db)):
-    return db.query(Order).all()
+    orders = db.query(Order).all()
+    return [  
+        {
+            "symbol": order.symbol,
+            "price": order.price,
+            "quantity": order.quantity,
+            "order_type": order.order_type,
+        }
+        for order in orders
+    ]
 
