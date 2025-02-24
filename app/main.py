@@ -1,4 +1,4 @@
-from fastapi import FastAPI, WebSocket, Depends, HTTPException
+from fastapi import FastAPI, WebSocket, Depends
 from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
@@ -28,7 +28,7 @@ class Order(Base):
     quantity = Column(Integer)
     order_type = Column(String)
 
-# Create database tables
+# ✅ Ensure tables are created on app startup
 @app.on_event("startup")
 def startup():
     Base.metadata.create_all(bind=engine)
@@ -51,7 +51,7 @@ class OrderCreate(BaseModel):
 # Create Order (Fix: Accept JSON instead of query params)
 @app.post("/orders", response_model=OrderCreate)
 def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    new_order = Order(**order.dict())
+    new_order = Order(**order.model_dump())  # ✅ Fix for Pydantic v2
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
@@ -62,17 +62,3 @@ def create_order(order: OrderCreate, db: Session = Depends(get_db)):
 def get_orders(db: Session = Depends(get_db)):
     return db.query(Order).all()
 
-# WebSocket for real-time updates
-active_connections = set()
-
-@app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    active_connections.add(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            for connection in active_connections:
-                await connection.send_text(f"New order: {data}")
-    except:
-        active_connections.remove(websocket)
