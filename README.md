@@ -23,31 +23,31 @@ A **FastAPI-powered trading service** that allows users to **place trade orders*
 ## Installation & Running Locally
 To run this project locally, follow these steps:
 
-### ** #1️ Clone the Repository**
+### #1️ Clone the Repository
 ```sh
 git clone https://github.com/yourusername/Blockhouse.git
 cd Blockhouse
 ```
 
-### ** #2 Set up virtual environment & Install Dependencies
+### #2 Set up virtual environment & Install Dependencies
 ```sh
 python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
-### ** #3 Start FastAPI Server
+### #3 Start FastAPI Server
 uvicorn app.main:app --reload
 
 ## Running with Docker
 
-### ** #1 Build and Run the Container
+### #1 Build and Run the Container
 ```sh
 docker build -t blockhouse .
 docker run -p 8000:8000 blockhouse
 ```
 ### API will be available at: http://localhost:8000/docs
 
-### ** #2 Run with Docker Compose (Includes PostgreSQL)
+### #2 Run with Docker Compose (Includes PostgreSQL)
 ```sh
 docker-compose up -d
 ```
