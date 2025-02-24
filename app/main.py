@@ -31,6 +31,7 @@ class Order(Base):
 
 @app.on_event("startup")
 def startup():
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
 # Dependency for database session
