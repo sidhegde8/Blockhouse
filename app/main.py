@@ -4,6 +4,8 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 import os
 from dotenv import load_dotenv
+from pydantic import BaseModel
+from typing import List
 
 # Load environment variables
 load_dotenv()
@@ -27,7 +29,9 @@ class Order(Base):
     order_type = Column(String)
 
 # Create database tables
-Base.metadata.create_all(bind=engine)
+@app.on_event("startup")
+def startup():
+    Base.metadata.create_all(bind=engine)
 
 # Dependency for database session
 def get_db():
@@ -37,25 +41,38 @@ def get_db():
     finally:
         db.close()
 
-# Create Order
-@app.post("/orders")
-def create_order(symbol: str, price: float, quantity: int, order_type: str, db: Session = Depends(get_db)):
-    order = Order(symbol=symbol, price=price, quantity=quantity, order_type=order_type)
-    db.add(order)
+# Pydantic Model for Order Request
+class OrderCreate(BaseModel):
+    symbol: str
+    price: float
+    quantity: int
+    order_type: str
+
+# Create Order (Fix: Accept JSON instead of query params)
+@app.post("/orders", response_model=OrderCreate)
+def create_order(order: OrderCreate, db: Session = Depends(get_db)):
+    new_order = Order(**order.dict())
+    db.add(new_order)
     db.commit()
-    db.refresh(order)
-    return {"message": "Order placed", "order": order}
+    db.refresh(new_order)
+    return new_order
 
 # Get All Orders
-@app.get("/orders")
+@app.get("/orders", response_model=List[OrderCreate])
 def get_orders(db: Session = Depends(get_db)):
-    orders = db.query(Order).all()
-    return {"orders": orders}
+    return db.query(Order).all()
 
 # WebSocket for real-time updates
+active_connections = set()
+
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    while True:
-        data = await websocket.receive_text()
-        await websocket.send_text(f"Received: {data}")
+    active_connections.add(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            for connection in active_connections:
+                await connection.send_text(f"New order: {data}")
+    except:
+        active_connections.remove(websocket)
