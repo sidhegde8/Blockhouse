@@ -10,10 +10,14 @@ class TestAPI(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_create_order(self):
-        response = client.post(
-            "/orders",
-            json={"symbol": "TSLA", "price": 184.0, "quantity": 4, "order_type": "sell"}
-        )
+        payload = {
+            "symbol": "AAPL",
+            "price": 150.0,
+            "quantity": 10,
+            "order_type": "buy"
+        }
+        response = client.post("/orders", json=payload)
+        print(response.json())  # Debugging: Check API response
         self.assertEqual(response.status_code, 200)
 
 if __name__ == "__main__":
