@@ -5,16 +5,15 @@ from sqlalchemy.orm import sessionmaker
 
 client = TestClient(app)
 
-# ✅ Reset the database before running tests
+# ✅ Force database reset before every test
 def reset_test_db():
     with engine.begin() as conn:
         Base.metadata.drop_all(bind=conn)  # Clears existing tables
         Base.metadata.create_all(bind=conn)  # Recreates tables
 
 class TestAPI(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        reset_test_db()  # ✅ Ensure database is empty before tests run
+    def setUp(self):  # ✅ Reset database before each test
+        reset_test_db()
 
     def test_read_orders(self):
         response = client.get("/orders")
