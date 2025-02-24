@@ -54,8 +54,8 @@ class OrderCreate(BaseModel):
 
 # Create Order (Fix: Accept JSON instead of query params)
 @app.post("/orders", response_model=OrderCreate)
-def create_order(order: OrderCreate, db: Session = Depends(get_db)):
-    new_order = Order(**order.model_dump())  # ✅ Fix for Pydantic v2
+def create_order(order: OrderCreate = Body(...), db: Session = Depends(get_db)):
+    new_order = Order(**order.model_dump())
     db.add(new_order)
     db.commit()
     db.refresh(new_order)
